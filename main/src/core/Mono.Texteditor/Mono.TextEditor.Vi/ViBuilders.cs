@@ -167,7 +167,7 @@ namespace Mono.TextEditor.Vi
 		{
 			return (ViBuilderContext ctx) => {
 				var k = ctx.LastKey;
-				if (char.IsDigit (k.Char)) {
+				if (char.IsDigit (k.Char) && ('0'!=k.Char)) {
 					ViBuilders.StartMultiplierBuilder (ctx, nextBuilder);
 					return true;
 				} else {
