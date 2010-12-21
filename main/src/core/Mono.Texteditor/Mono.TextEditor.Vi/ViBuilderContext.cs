@@ -205,6 +205,8 @@ namespace Mono.TextEditor.Vi
 			{ 'R', Replace, true },
 			{ 'o', Open, true },
 			{ 'O', OpenAbove, true },
+			{ '0', CaretMoveActions.LineStart },
+			{ '^', CaretMoveActions.LineHome },
 			{ new ViKey (ModifierType.ControlMask, Key.Up),       ScrollActions.Up },
 			{ new ViKey (ModifierType.ControlMask, Key.KP_Up),    ScrollActions.Up },
 			{ new ViKey (ModifierType.ControlMask, Key.Down),     ScrollActions.Down },
