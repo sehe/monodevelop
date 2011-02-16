@@ -200,9 +200,10 @@ namespace Mono.TextEditor.Vi
 		static ViBuilderContext ()
 		{
 			normalBuilder = 
-				ViBuilders.RegisterBuilder (
-					ViBuilders.MultiplierBuilder (
-						ViBuilders.First (normalActions.Builder, motions.Builder, nonCharMotions.Builder)));
+				ViBuilders.MultiplierBuilder (
+					ViBuilders.RegisterBuilder (
+						ViBuilders.MultiplierBuilder (
+							ViBuilders.First (normalActions.Builder, motions.Builder, nonCharMotions.Builder))));
 			insertActions = ViBuilders.First (nonCharMotions.Builder, insertEditActions.Builder);
 		}
 		
@@ -223,7 +224,7 @@ namespace Mono.TextEditor.Vi
 			{ 'y', MakeMotionCommand, true }, // FIXME support registers
 			{ 'd', MakeMotionCommand, true }, // FIXME support registers
 			{ 'c', MakeMotionCommand, true }, // FIXME support registers
-			{ 'p', ClipboardActions.Paste },  // FIXME support registers
+			{ 'p', PasteRegister, true },  // FIXME support registers
 			{ 'g', new ViCommandMap () {
 				{ 'g', CaretMoveActions.ToDocumentStart },
 			}},
@@ -310,8 +311,18 @@ namespace Mono.TextEditor.Vi
 			{ new ViKey (ModifierType.ShiftMask,   Key.BackSpace),       DeleteActions.Backspace },
 		};
 		
+		static bool PasteRegister(ViBuilderContext ctx)
+		{
+			// TODO convert existing visual selection into implicit delete
+			ctx.RunActions(
+               data => ClipboardActions.PasteFrom(ctx.Editor.GetRegisterAsClipboard(ctx.Register), data));
+
+			return true;
+		}
+
 		static bool MakeMotionCommand(ViBuilderContext ctx)
 		{
+			Action<TextEditorData> yank = data => ctx.Editor.SetRegisterContents(ctx.Register, data.SelectedText);
 			// TODO: Re inline delegates (closures over ctx for now): see comment at ViBuilders.MotionCommand
 			switch (ctx.LastKey.Char)
 			{
@@ -319,16 +330,15 @@ namespace Mono.TextEditor.Vi
 					ctx.Builder = ViBuilders.MotionCommandBuilder(ctx.LastKey, false, (linewise, motion) =>
 					 	{
 							var selection = linewise? SelectionActions.LineActionFromMoveAction(motion) : SelectionActions.FromMoveAction (motion);
-							if (linewise) ctx.RunActions(selection, ClipboardActions.Cut, CaretMoveActions.LineFirstNonWhitespace);
-							else 		  ctx.RunActions(selection, ClipboardActions.Cut);
+							if (linewise) ctx.RunActions(selection, yank, ClipboardActions.Cut, CaretMoveActions.LineFirstNonWhitespace);
+							else 		  ctx.RunActions(selection, yank, ClipboardActions.Cut);
 					    });
 					break;
 				case 'y':
 					ctx.Builder = ViBuilders.MotionCommandBuilder(ctx.LastKey, false, (linewise, motion) =>
 					 	{
 							var selection = linewise? SelectionActions.LineActionFromMoveAction(motion) : SelectionActions.FromMoveAction (motion);
-							if (linewise) ctx.RunActions(selection, ClipboardActions.Copy, CaretMoveActions.LineFirstNonWhitespace);
-							else 		  ctx.RunActions(selection, ClipboardActions.Copy);
+							ctx.RunActions(selection, yank);
 					    });
 					break;
 				case 'c':
@@ -337,12 +347,12 @@ namespace Mono.TextEditor.Vi
 							var selection = linewise? SelectionActions.LineActionFromMoveAction(motion) : SelectionActions.FromMoveAction (motion);
 							if (linewise) 
 							{
-								ctx.RunActions(selection, ClipboardActions.Cut, CaretMoveActions.LineFirstNonWhitespace);
+								ctx.RunActions(selection, yank, ClipboardActions.Cut, CaretMoveActions.LineFirstNonWhitespace);
 								OpenAbove(ctx);
 							}
 							else 		  
 							{
-								ctx.RunActions(selection, ClipboardActions.Cut);
+								ctx.RunActions(selection, yank, ClipboardActions.Cut);
 								Insert(ctx);
 							}
 					    });

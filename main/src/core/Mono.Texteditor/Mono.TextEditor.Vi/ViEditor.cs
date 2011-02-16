@@ -29,6 +29,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Gdk;
+using Clipboard=Gtk.Clipboard;
 
 namespace Mono.TextEditor.Vi
 {
@@ -39,7 +40,8 @@ namespace Mono.TextEditor.Vi
 		#region Register constants
 		const char REG_YANK_DEFAULT = '0';
 		const char REG_DELETE_DEFAULT = '1';
-		const char REG_PASTE_DEFAULT = '"';
+		const char REG_PASTE_DEFAULT = '\0';
+		const char REG_UNNAMED = '"';
 		const char REG_DELETE_SMALL = '-';
 		const char REG_BLACKHOLE = '_';
 		const char REG_LAST_INSERTED_TEXT = '.';
@@ -163,8 +165,12 @@ namespace Mono.TextEditor.Vi
 
 		public string GetRegisterContents (char register)
 		{
-			if (register == '"')
-				register = lastRegisterUsed;
+			switch (register) {
+					case REG_UNNAMED:
+					case REG_PASTE_DEFAULT:
+						register = lastRegisterUsed;
+						break;
+			}
 
 			switch (register) {
 				case REG_LAST_INSERTED_TEXT:
@@ -255,7 +261,8 @@ namespace Mono.TextEditor.Vi
 				case REG_DELETE_SMALL:
 					break;
 
-				case REG_PASTE_DEFAULT:
+				case REG_PASTE_DEFAULT: // none specified
+				case REG_UNNAMED: // "
 					register = '0';
 					break;
 
@@ -271,6 +278,30 @@ namespace Mono.TextEditor.Vi
 			lastRegisterUsed = register;
 			registers[register] = value;
 		}
+
+		static private readonly IDictionary<char, Clipboard> _clipboards = new Dictionary<char, Clipboard>();
+
+		public Clipboard GetRegisterAsClipboard(char register)
+		{
+			Clipboard clp;
+			lock (_clipboards)
+			{
+				if (!_clipboards.ContainsKey(register))
+				{
+					var atom = Atom.Intern(this.GetType().FullName + "::" + register, false);
+					_clipboards.Add(register, clp = Clipboard.Get(atom));
+				} else
+				{
+					clp = _clipboards[register];
+				}
+			}
+
+			var val  = GetRegisterContents (register);
+			if (null == val) clp.Clear();
+			else 			 clp.Text = val;
+			return clp;
+		}
+
 	}
 	
 	public enum ViEditorMode
