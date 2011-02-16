@@ -269,7 +269,7 @@ kkk lll", mode.Text);
 		}
 	}
 	
-	class TestViEditMode : ViEditMode
+	class TestViEditMode : NewViEditMode
 	{
 		public TestViEditMode () : this (new TextEditorData ())
 		{
