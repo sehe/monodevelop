@@ -208,16 +208,17 @@ namespace Mono.TextEditor.Vi
 				{
 					// HACK: if editObjects is false, NavCharActions are used. Need a nicer way to discriminate
 					// TODO: actually reuse the multiplier enabled new logic from ViBuilderContexts?
+					bool linewise = false;
 					var action = editObjects
 						? ViActionMaps.GetEditObjectCharAction (k.Char)
-						: ViActionMaps.GetNavCharAction (k.Char);
+						: ViActionMaps.GetNavCharAction (k.Char, out linewise);
 					if (action == null)
 						action = ViActionMaps.GetDirectionKeyAction (k.Key, k.Modifiers);
 					// execute
 					if (action != null)
-						payload(false/*linewise*/, action);
+						payload(linewise, action);
 					else 
-						ctx.Message = "Unrecognised motion";
+						ctx.SetError("Unrecognised motion");
 				}
 				
 				return true;
