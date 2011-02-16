@@ -134,6 +134,35 @@ namespace Mono.TextEditor.Vi
 			}
 		}
 		
+		
+		// SEHE: TODO evaluate (undo stack conceptual location)
+		public void RunActions (params Action<TextEditorData>[] actions)
+		{
+			Completed = true;
+//			Editor.Editor.HideMouseCursor ();
+			try {
+				Editor.Document.BeginAtomicUndo ();
+				
+				//FALLBACK for builders that don't handler multipliers directly
+				//we cap these at 100, to reduce the length of time MD could be unresponsive
+				int repeat = Multiplier;
+				repeat = System.Math.Max (repeat, 1);
+				repeat = System.Math.Min (repeat, 100);
+				
+				for (int i = 0; i < repeat; i++)
+					foreach (var action in actions)
+						action (Editor.Data);
+						
+				Editor.Document.EndAtomicUndo ();
+			} catch (Exception e) {
+				var sb = new System.Text.StringBuilder ("Error while executing actions ");
+				foreach (var action in actions)
+					sb.AppendFormat (" {0}", action);
+				Console.WriteLine (sb.ToString () + ": " + e);
+			}
+		
+		}
+		
 		public ViEditorMode Mode { get { return Editor.Mode; } }
 		
 		//HACK: this is really inelegant
@@ -191,6 +220,9 @@ namespace Mono.TextEditor.Vi
 				{ 'c', FoldActions.CloseFold },
 				{ 'o', FoldActions.OpenFold },
 			}},
+			{ 'y', MakeMotionCommand, true }, // FIXME support registers
+			{ 'd', MakeMotionCommand, true }, // FIXME support registers
+			{ 'c', MakeMotionCommand, true }, // FIXME support registers
 			{ 'g', new ViCommandMap () {
 				{ 'g', CaretMoveActions.ToDocumentStart },
 			}},
@@ -276,6 +308,49 @@ namespace Mono.TextEditor.Vi
 			{ new ViKey (ModifierType.ShiftMask,   Key.Tab),       MiscActions.RemoveTab },
 			{ new ViKey (ModifierType.ShiftMask,   Key.BackSpace),       DeleteActions.Backspace },
 		};
+		
+		static bool MakeMotionCommand(ViBuilderContext ctx)
+		{
+			// TODO: Re inline delegates (closures over ctx for now): see comment at ViBuilders.MotionCommand
+			switch (ctx.LastKey.Char)
+			{
+				case 'd':
+					ctx.Builder = ViBuilders.MotionCommandBuilder(ctx.LastKey, (linewise, motion) =>
+					 	{
+							var selection = linewise? SelectionActions.LineActionFromMoveAction(motion) : SelectionActions.FromMoveAction (motion);
+							if (linewise) ctx.RunActions(selection, ClipboardActions.Cut, CaretMoveActions.LineFirstNonWhitespace);
+							else 		  ctx.RunActions(selection, ClipboardActions.Cut);
+					    });
+					break;
+				case 'y':
+					ctx.Builder = ViBuilders.MotionCommandBuilder(ctx.LastKey, (linewise, motion) =>
+					 	{
+							var selection = linewise? SelectionActions.LineActionFromMoveAction(motion) : SelectionActions.FromMoveAction (motion);
+							if (linewise) ctx.RunActions(selection, ClipboardActions.Copy, CaretMoveActions.LineFirstNonWhitespace);
+							else 		  ctx.RunActions(selection, ClipboardActions.Copy);
+					    });
+					break;
+				case 'c':
+					ctx.Builder = ViBuilders.MotionCommandBuilder(ctx.LastKey, (linewise, motion) =>
+					 	{
+							var selection = linewise? SelectionActions.LineActionFromMoveAction(motion) : SelectionActions.FromMoveAction (motion);
+							if (linewise) 
+							{
+								ctx.RunActions(selection, ClipboardActions.Cut, CaretMoveActions.LineFirstNonWhitespace);
+								OpenAbove(ctx);
+							}
+							else 		  
+							{
+								ctx.RunActions(selection, ClipboardActions.Cut);
+								Insert(ctx);
+							}
+					    });
+					break;
+				default:
+					throw new InvalidProgramException("Illegal branch");
+			}
+			return true;
+		}
 		
 		static bool Insert (ViBuilderContext ctx)
 		{
