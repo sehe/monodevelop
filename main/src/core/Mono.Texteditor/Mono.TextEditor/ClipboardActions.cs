@@ -495,6 +495,11 @@ namespace Mono.TextEditor
 		
 		public static void Paste (TextEditorData data)
 		{
+			PasteFrom(Clipboard.Get (CopyOperation.CLIPBOARD_ATOM), data);
+		}
+		
+		public static void PasteFrom (Clipboard clipboard, TextEditorData data)
+		{
 			if (!data.CanEditSelection)
 				return;
 			LineSegment line = data.Document.GetLine (data.Caret.Line);
@@ -504,7 +509,7 @@ namespace Mono.TextEditor
 				int textLength = data.Insert (offset, text);
 				data.Caret.Offset = offset + textLength;
 			}
-			PasteFrom (Clipboard.Get (CopyOperation.CLIPBOARD_ATOM), data, true, data.IsSomethingSelected ? data.SelectionRange.Offset : data.Caret.Offset);
+			PasteFrom (clipboard, data, true, data.IsSomethingSelected ? data.SelectionRange.Offset : data.Caret.Offset);
 		}
 	}
 }
