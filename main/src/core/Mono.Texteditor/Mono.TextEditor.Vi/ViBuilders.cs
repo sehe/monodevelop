@@ -28,6 +28,7 @@ using System;
 using System.Linq;
 using Gdk;
 using System.Text;
+using System.ComponentModel;
 
 namespace Mono.TextEditor.Vi
 {
@@ -188,6 +189,35 @@ namespace Mono.TextEditor.Vi
 					ctx.Builder = nextBuilder;
 					return ctx.Builder (ctx);
 				}
+			};
+		}
+		
+		// TODO replace (linewise, movement_action) by proper ViMotion struct (linewise, blockwise, virtual, charwise?)
+		// Would like to have a ViMotionAction(TextEditorData, ViMotion). Needs more thought
+		public delegate void MotionCommand(bool lineWise, Action<TextEditorData> movement);
+					
+		public static ViBuilder MotionCommandBuilder (ViKey command, MotionCommand payload)
+		{
+			return (ViBuilderContext ctx) => {
+				var k = ctx.LastKey;
+				
+				if (k.Equals(command))
+				{
+					payload(true, SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd));
+				} else 
+				{
+					// TODO: actually reuse the multiplier enabled new logic from ViBuilderContexts?
+					var action = ViActionMaps.GetNavCharAction (k.Char);
+					if (action == null)
+						action = ViActionMaps.GetDirectionKeyAction (k.Key, k.Modifiers);
+					// execute
+					if (action != null)
+						payload(false/*linewise*/, action);
+					else 
+						ctx.Message = "Unrecognised motion";
+				}
+				
+				return true;
 			};
 		}
 		
