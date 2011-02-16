@@ -284,6 +284,11 @@ namespace Mono.TextEditor.Vi
 		public Clipboard GetRegisterAsClipboard(char register)
 		{
 			Clipboard clp;
+			/* TODO/FIXME: perhaps we can do with just the single clipboard
+			 * atom here since, realisticly we won't be using the Vi clipboard
+			 * concurrently (or reading the multiple registers as clipboard
+			 * data interleaved)...?
+			 */
 			lock (_clipboards)
 			{
 				if (!_clipboards.ContainsKey(register))
