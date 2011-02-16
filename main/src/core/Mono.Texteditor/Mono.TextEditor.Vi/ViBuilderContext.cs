@@ -223,6 +223,7 @@ namespace Mono.TextEditor.Vi
 			{ 'y', MakeMotionCommand, true }, // FIXME support registers
 			{ 'd', MakeMotionCommand, true }, // FIXME support registers
 			{ 'c', MakeMotionCommand, true }, // FIXME support registers
+			{ 'p', ClipboardActions.Paste },  // FIXME support registers
 			{ 'g', new ViCommandMap () {
 				{ 'g', CaretMoveActions.ToDocumentStart },
 			}},
@@ -315,7 +316,7 @@ namespace Mono.TextEditor.Vi
 			switch (ctx.LastKey.Char)
 			{
 				case 'd':
-					ctx.Builder = ViBuilders.MotionCommandBuilder(ctx.LastKey, (linewise, motion) =>
+					ctx.Builder = ViBuilders.MotionCommandBuilder(ctx.LastKey, false, (linewise, motion) =>
 					 	{
 							var selection = linewise? SelectionActions.LineActionFromMoveAction(motion) : SelectionActions.FromMoveAction (motion);
 							if (linewise) ctx.RunActions(selection, ClipboardActions.Cut, CaretMoveActions.LineFirstNonWhitespace);
@@ -323,7 +324,7 @@ namespace Mono.TextEditor.Vi
 					    });
 					break;
 				case 'y':
-					ctx.Builder = ViBuilders.MotionCommandBuilder(ctx.LastKey, (linewise, motion) =>
+					ctx.Builder = ViBuilders.MotionCommandBuilder(ctx.LastKey, false, (linewise, motion) =>
 					 	{
 							var selection = linewise? SelectionActions.LineActionFromMoveAction(motion) : SelectionActions.FromMoveAction (motion);
 							if (linewise) ctx.RunActions(selection, ClipboardActions.Copy, CaretMoveActions.LineFirstNonWhitespace);
@@ -331,7 +332,7 @@ namespace Mono.TextEditor.Vi
 					    });
 					break;
 				case 'c':
-					ctx.Builder = ViBuilders.MotionCommandBuilder(ctx.LastKey, (linewise, motion) =>
+					ctx.Builder = ViBuilders.MotionCommandBuilder(ctx.LastKey, true, (linewise, motion) =>
 					 	{
 							var selection = linewise? SelectionActions.LineActionFromMoveAction(motion) : SelectionActions.FromMoveAction (motion);
 							if (linewise) 
