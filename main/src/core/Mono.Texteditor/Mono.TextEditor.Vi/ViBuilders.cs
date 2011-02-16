@@ -196,7 +196,7 @@ namespace Mono.TextEditor.Vi
 		// Would like to have a ViMotionAction(TextEditorData, ViMotion). Needs more thought
 		public delegate void MotionCommand(bool lineWise, Action<TextEditorData> movement);
 					
-		public static ViBuilder MotionCommandBuilder (ViKey command, MotionCommand payload)
+		public static ViBuilder MotionCommandBuilder (ViKey command, bool editObjects, MotionCommand payload)
 		{
 			return (ViBuilderContext ctx) => {
 				var k = ctx.LastKey;
@@ -206,8 +206,11 @@ namespace Mono.TextEditor.Vi
 					payload(true, SelectionActions.LineActionFromMoveAction (CaretMoveActions.LineEnd));
 				} else 
 				{
+					// HACK: if editObjects is false, NavCharActions are used. Need a nicer way to discriminate
 					// TODO: actually reuse the multiplier enabled new logic from ViBuilderContexts?
-					var action = ViActionMaps.GetNavCharAction (k.Char);
+					var action = editObjects
+						? ViActionMaps.GetEditObjectCharAction (k.Char)
+						: ViActionMaps.GetNavCharAction (k.Char);
 					if (action == null)
 						action = ViActionMaps.GetDirectionKeyAction (k.Key, k.Modifiers);
 					// execute
