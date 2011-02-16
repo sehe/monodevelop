@@ -37,6 +37,13 @@ namespace Mono.TextEditor.Vi
 	
 		public static Action<TextEditorData> GetEditObjectCharAction (char c)
 		{
+			bool linewise;
+			return GetEditObjectCharAction(c, out linewise);
+		}
+		
+		public static Action<TextEditorData> GetEditObjectCharAction (char c, out bool linewise)
+		{
+			linewise = false;
 			switch (c) {
 			case 'W':
 			case 'w':
@@ -45,11 +52,18 @@ namespace Mono.TextEditor.Vi
 			case 'b':
 				return ViActions.WordStart;
 			}
-			return GetNavCharAction (c);
+			return GetNavCharAction (c, out linewise);
 		}
 		
 		public static Action<TextEditorData> GetNavCharAction (char c)
 		{
+			bool linewise;
+			return GetNavCharAction(c, out linewise);
+		}
+						
+		public static Action<TextEditorData> GetNavCharAction (char c, out bool linewise)
+		{
+			linewise = false;
 			switch (c) {
 			case 'h':
 				return ViActions.Left;
@@ -64,8 +78,10 @@ namespace Mono.TextEditor.Vi
 			case 'W':
 				return CaretMoveActions.NextWord;
 			case 'k':
+				linewise = true;
 				return ViActions.Up;
 			case 'j':
+				linewise = true;
 				return ViActions.Down;
 			case '%':
 				return MiscActions.GotoMatchingBracket;
@@ -79,8 +95,10 @@ namespace Mono.TextEditor.Vi
 			case 'G':
 				return CaretMoveActions.ToDocumentEnd;
 			case '{':
+				linewise = true;
 				return ViActions.MoveToPreviousEmptyLine;
 			case '}':
+				linewise = true;
 				return ViActions.MoveToNextEmptyLine;
 			}
 			return null;
