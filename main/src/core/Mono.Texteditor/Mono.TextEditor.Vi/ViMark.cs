@@ -171,7 +171,7 @@ namespace Mono.TextEditor.Vi
 			var names = PeerMarks(args.LineSegment?? base.LineSegment).Select(m => "'" + m.MarkCharacter);
 			var last = names.LastOrDefault();
 			if (null != last)
-				args.Editor.TooltipText = "Vi Marks: " + string.Join(", ", names.Take(names.Count()-1)) + " and " + last;
+				args.Editor.TooltipText = "Vi Marks: " + string.Join(", ", names.Take(names.Count()-1).ToArray()) + " and " + last;
 		}
 	}
 	
