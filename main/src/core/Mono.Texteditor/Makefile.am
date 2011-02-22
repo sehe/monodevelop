@@ -65,6 +65,7 @@ FILES =  \
 	Mono.TextEditor.Vi/ViMacro.cs \
 	Mono.TextEditor.Vi/ViMark.cs \
 	Mono.TextEditor.Vi/ViMode.cs \
+	Mono.TextEditor.Vi/ViMotion.cs \
 	Mono.TextEditor.Vi/ViWordFindStrategy.cs \
 	Mono.TextEditor/AbstractPartitioner.cs \
 	Mono.TextEditor/BookmarkActions.cs \
